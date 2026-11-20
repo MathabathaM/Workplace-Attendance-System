@@ -84,6 +84,24 @@ docker run --rm -p 8080:8080 `
 Open http://localhost:8080/ for this local container. Replace the example
 bootstrap values with your own, and do not commit them.
 
+## Deploy to Vercel
+
+Set the Vercel Framework Preset to **Container** and leave Root Directory at the
+repository root. Vercel uses `Dockerfile.vercel`, which binds to the default
+container port and stores SQLite under `/tmp`.
+
+Add these Production environment variables in the Vercel project settings before
+the first deployment:
+
+- `BootstrapAdmin__Email` = the initial administrator's sign-in email
+- `BootstrapAdmin__Password` = a unique password meeting the 12-character minimum
+
+The Vercel container filesystem is temporary. `/tmp/workplace.db` is suitable
+only for a disposable demo; attendance data can be lost when Vercel replaces
+the container. Do not use this configuration for real attendance records.
+Use a host with persistent disk storage or migrate the application to a managed
+database before production use.
+
 ## Build and test
 
 ```powershell
