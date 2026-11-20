@@ -1,6 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+COPY ["Directory.Build.props", "./"]
 COPY ["src/Workplace.Api/Workplace.Api.csproj", "src/Workplace.Api/"]
 COPY ["src/Workplace.Data/Workplace.Data.csproj", "src/Workplace.Data/"]
 RUN dotnet restore "src/Workplace.Api/Workplace.Api.csproj"
