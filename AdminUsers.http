@@ -1,0 +1,57 @@
+@baseUrl = http://localhost:5080
+@userId = replace-with-a-user-id
+
+### Sign in as System Administrator
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "thabo.mokoena@example.com",
+  "password": "ChangeMe-Dev-2026!",
+  "rememberMe": false
+}
+
+### List available roles
+GET {{baseUrl}}/api/admin/roles
+
+### List employees that can be linked to an account
+GET {{baseUrl}}/api/admin/employees
+
+### List user accounts and current role assignments
+GET {{baseUrl}}/api/admin/users
+
+### Create an HR account with a temporary password
+POST {{baseUrl}}/api/admin/users
+Content-Type: application/json
+
+{
+  "email": "hr.officer@example.com",
+  "temporaryPassword": "Temporary-HR-Password-2026",
+  "roles": ["HR Officer"]
+}
+
+### Update assigned roles and activate/deactivate an account
+PUT {{baseUrl}}/api/admin/users/{{userId}}
+Content-Type: application/json
+
+{
+  "roles": ["Auditor"],
+  "isActive": true
+}
+
+### Reset an account password; user must change it at next login
+POST {{baseUrl}}/api/admin/users/{{userId}}/temporary-password
+Content-Type: application/json
+
+{
+  "temporaryPassword": "Temporary-Reset-Password-2026"
+}
+
+### Prevent removing or deactivating the last active System Administrator
+PUT {{baseUrl}}/api/admin/users/{{userId}}
+Content-Type: application/json
+
+{
+  "roles": ["Auditor"],
+  "isActive": false
+}

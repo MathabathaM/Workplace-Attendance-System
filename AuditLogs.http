@@ -1,0 +1,20 @@
+@baseUrl = http://localhost:5080
+
+### Sign in as the development Auditor
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "auditor@example.com",
+  "password": "ChangeMe-Dev-2026!",
+  "rememberMe": false
+}
+
+### Search the read-only audit trail
+GET {{baseUrl}}/api/audit-logs?fromDate=2026-10-19&toDate=2026-11-17&page=1&pageSize=25
+
+### Filter audit entries by record type and search text
+GET {{baseUrl}}/api/audit-logs?entityType=attendance_record&search=late&page=1&pageSize=25
+
+### Generate a read-only attendance compliance report
+GET {{baseUrl}}/api/attendance/reports?fromDate=2026-10-19&toDate=2026-11-17

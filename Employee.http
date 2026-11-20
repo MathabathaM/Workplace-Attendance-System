@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:5080
+
+### Sign in as the development Employee
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "amara.patel@example.com",
+  "password": "ChangeMe-Dev-2026!",
+  "rememberMe": false
+}
+
+### View your own shift and attendance overview
+GET {{baseUrl}}/api/me/portal
+
+### View your own attendance history
+GET {{baseUrl}}/api/me/attendance?page=1&pageSize=10

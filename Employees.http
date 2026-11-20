@@ -1,0 +1,59 @@
+@baseUrl = http://localhost:5080
+@employeeId = replace-with-an-employee-id
+@siteId = replace-with-a-site-id
+@departmentId = replace-with-a-department-id
+@shiftId = replace-with-an-active-shift-id
+
+### Sign in as System Administrator
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "thabo.mokoena@example.com",
+  "password": "ChangeMe-Dev-2026!",
+  "rememberMe": false
+}
+
+### Create an employee and their temporary-password login
+POST {{baseUrl}}/api/employees
+Content-Type: application/json
+
+{
+  "employeeNumber": "EMP-2001",
+  "firstName": "New",
+  "lastName": "Employee",
+  "email": "new.employee@example.com",
+  "jobTitle": "Operations Assistant",
+  "siteId": "{{siteId}}",
+  "departmentId": "{{departmentId}}",
+  "shiftId": "{{shiftId}}",
+  "employmentStatus": "active",
+  "initialPassword": "Temporary-Pass-2026"
+}
+
+### Set or reset an existing employee's temporary login password
+POST {{baseUrl}}/api/employees/{{employeeId}}/account
+Content-Type: application/json
+
+{
+  "temporaryPassword": "Temporary-Pass-2026"
+}
+
+### Employee signs in; response includes "mustChangePassword": true
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "new.employee@example.com",
+  "password": "Temporary-Pass-2026",
+  "rememberMe": false
+}
+
+### Employee must change the temporary password before accessing other APIs
+POST {{baseUrl}}/api/auth/change-password
+Content-Type: application/json
+
+{
+  "currentPassword": "Temporary-Pass-2026",
+  "newPassword": "Employee-New-Password-2026"
+}

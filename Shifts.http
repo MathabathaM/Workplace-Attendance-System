@@ -1,0 +1,66 @@
+@baseUrl = http://localhost:5080
+@shiftId = replace-with-a-shift-id
+@employeeId = replace-with-an-employee-id
+
+### Sign in as System Administrator
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "thabo.mokoena@example.com",
+  "password": "ChangeMe-Dev-2026!",
+  "rememberMe": false
+}
+
+### List shift patterns
+GET {{baseUrl}}/api/shifts
+
+### Read active employee assignments
+GET {{baseUrl}}/api/shifts/assignments
+
+### Search employee assignments
+GET {{baseUrl}}/api/shifts/assignments?search=Kabelo
+
+### Create an overnight shift
+POST {{baseUrl}}/api/shifts
+Content-Type: application/json
+
+{
+  "name": "Night 22:00",
+  "category": "night",
+  "startTime": "22:00",
+  "endTime": "06:00",
+  "breakMinutes": 30,
+  "graceMinutes": 5,
+  "crossesMidnight": true,
+  "isActive": true
+}
+
+### Get a shift (replace with an existing shift ID)
+GET {{baseUrl}}/api/shifts/{{shiftId}}
+
+### Update shift details
+PUT {{baseUrl}}/api/shifts/{{shiftId}}
+Content-Type: application/json
+
+{
+  "name": "Updated day shift",
+  "category": "day",
+  "startTime": "08:00",
+  "endTime": "16:30",
+  "breakMinutes": 30,
+  "graceMinutes": 5,
+  "crossesMidnight": false,
+  "isActive": true
+}
+
+### Change an employee's ongoing recurring shift
+PUT {{baseUrl}}/api/shifts/assignments/{{employeeId}}
+Content-Type: application/json
+
+{
+  "shiftId": "{{shiftId}}"
+}
+
+### Deactivate a shift after reassigning its employees
+DELETE {{baseUrl}}/api/shifts/{{shiftId}}

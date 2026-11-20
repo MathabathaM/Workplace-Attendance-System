@@ -1,0 +1,48 @@
+@baseUrl = http://localhost:5080
+@attendanceId = replace-with-an-id-from-the-list-response
+
+### Sign in as the System Administrator
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "thabo.mokoena@example.com",
+  "password": "ChangeMe-Dev-2026!",
+  "rememberMe": false
+}
+
+### List today's attendance with summary counts
+GET {{baseUrl}}/api/attendance?page=1&pageSize=8
+
+### Search and filter attendance
+GET {{baseUrl}}/api/attendance?search=Kabelo&status=incomplete
+
+### HR attendance report for a date range (maximum 366 days)
+GET {{baseUrl}}/api/attendance/reports?fromDate=2026-10-19&toDate=2026-11-17
+
+### HR attendance report filtered to a department
+GET {{baseUrl}}/api/attendance/reports?fromDate=2026-10-19&toDate=2026-11-17&departmentId=replace-with-a-department-id
+
+### Review a record (replace the ID with one returned by the list request)
+PUT {{baseUrl}}/api/attendance/{{attendanceId}}
+Content-Type: application/json
+
+{
+  "scheduledStart": "06:00",
+  "clockIn": "05:54",
+  "clockOut": "10:31",
+  "status": "approved_exception",
+  "reason": "Supervisor verified the original attendance scan."
+}
+
+### Updating an unknown record returns 404
+PUT {{baseUrl}}/api/attendance/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "scheduledStart": "08:00",
+  "clockIn": "08:00",
+  "clockOut": null,
+  "status": "on_time",
+  "reason": "Attempting to update a missing attendance record."
+}
