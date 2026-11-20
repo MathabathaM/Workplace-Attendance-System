@@ -16,8 +16,8 @@ RUN dotnet publish "src/Workplace.Api/Workplace.Api.csproj" \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV PORT=8080
+ENV PORT=80
 ENV Database__Path=/tmp/workplace.db
 COPY --from=build /app/publish .
-EXPOSE 8080
+EXPOSE 80
 ENTRYPOINT ["dotnet", "Workplace.Api.dll"]
