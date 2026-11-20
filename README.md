@@ -96,6 +96,9 @@ the first deployment:
 - `BootstrapAdmin__Email` = the initial administrator's sign-in email
 - `BootstrapAdmin__Password` = a unique password meeting the 12-character minimum
 
+Keep both variables configured while using `/tmp/workplace.db`; a fresh
+container database needs them to recreate the initial administrator.
+
 The Vercel container filesystem is temporary. `/tmp/workplace.db` is suitable
 only for a disposable demo; attendance data can be lost when Vercel replaces
 the container. Do not use this configuration for real attendance records.
