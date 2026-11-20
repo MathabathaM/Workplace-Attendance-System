@@ -1,0 +1,23 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY ["Directory.Build.props", "./"]
+COPY ["src/Workplace.Api/Workplace.Api.csproj", "src/Workplace.Api/"]
+COPY ["src/Workplace.Data/Workplace.Data.csproj", "src/Workplace.Data/"]
+RUN dotnet restore "src/Workplace.Api/Workplace.Api.csproj"
+
+COPY . .
+RUN dotnet publish "src/Workplace.Api/Workplace.Api.csproj" \
+    --configuration Release \
+    --no-restore \
+    --output /app/publish \
+    /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV PORT=8080
+ENV Database__Path=/data/workplace.db
+COPY --from=build /app/publish .
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "Workplace.Api.dll"]
