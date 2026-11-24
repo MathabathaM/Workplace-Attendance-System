@@ -39,10 +39,10 @@ public sealed class AttendanceController(AppDbContext db, ICurrentUser currentUs
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
-            var search = $"%{EscapeLike(query.Search.Trim())}%";
+            var search = $"%{EscapeLike(query.Search.Trim().ToLowerInvariant())}%";
             filtered = filtered.Where(record =>
-                EF.Functions.Like(record.Employee.FullName, search, "\\") ||
-                EF.Functions.Like(record.Employee.EmployeeNumber, search, "\\"));
+                EF.Functions.Like(record.Employee.FullName.ToLower(), search, "\\") ||
+                EF.Functions.Like(record.Employee.EmployeeNumber.ToLower(), search, "\\"));
         }
 
         if (!string.IsNullOrWhiteSpace(query.Status))

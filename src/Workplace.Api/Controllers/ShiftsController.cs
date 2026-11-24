@@ -1,7 +1,7 @@
 using System.Globalization;
+using Npgsql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Workplace.Api.Contracts;
 using Workplace.Api.Services;
@@ -177,11 +177,11 @@ public sealed class ShiftsController(AppDbContext db) : ControllerBase
             query = query.Where(employee => employee.DepartmentId == id);
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var pattern = $"%{EscapeLike(search.Trim())}%";
+            var pattern = $"%{EscapeLike(search.Trim().ToLowerInvariant())}%";
             query = query.Where(employee =>
-                EF.Functions.Like(employee.FullName, pattern, "\\") ||
-                EF.Functions.Like(employee.EmployeeNumber, pattern, "\\") ||
-                EF.Functions.Like(employee.Department.Name, pattern, "\\"));
+                EF.Functions.Like(employee.FullName.ToLower(), pattern, "\\") ||
+                EF.Functions.Like(employee.EmployeeNumber.ToLower(), pattern, "\\") ||
+                EF.Functions.Like(employee.Department.Name.ToLower(), pattern, "\\"));
         }
 
         var employees = await query.OrderBy(employee => employee.LastName).ThenBy(employee => employee.FirstName)
@@ -344,10 +344,9 @@ public sealed class ShiftsController(AppDbContext db) : ControllerBase
     }
 
     private static bool IsUniqueViolation(DbUpdateException exception) =>
-        exception.InnerException is SqliteException
+        exception.InnerException is PostgresException
         {
-            SqliteErrorCode: 19,
-            SqliteExtendedErrorCode: 2067
+            SqlState: PostgresErrorCodes.UniqueViolation
         };
 
     private static string EscapeLike(string value) =>

@@ -6,7 +6,6 @@ using Workplace.Data;
 using Workplace.Data.Auditing;
 using Workplace.Data.Auth;
 using Workplace.Data.Entities;
-using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,24 +24,14 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<AuditInterceptor>();
 
-// ---- Local database ----
-var databasePath = builder.Configuration["Database:Path"];
-if (string.IsNullOrWhiteSpace(databasePath))
-{
-    var localData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    databasePath = Path.Combine(localData, "Workplace", "workplace.db");
-}
-
-databasePath = Path.GetFullPath(databasePath);
-Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
-var connectionString = new SqliteConnectionStringBuilder
-{
-    DataSource = databasePath,
-    ForeignKeys = true
-}.ToString();
+// ---- PostgreSQL database ----
+var connectionString = builder.Configuration.GetConnectionString("WorkplaceDatabase");
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException(
+        "ConnectionStrings:WorkplaceDatabase must be configured.");
 
 builder.Services.AddDbContext<AppDbContext>((sp, options) => options
-    .UseSqlite(connectionString)
+    .UseNpgsql(connectionString)
     .UseSnakeCaseNamingConvention()
     .AddInterceptors(sp.GetRequiredService<AuditInterceptor>()));
 
@@ -113,26 +102,12 @@ await using (var scope = app.Services.CreateAsyncScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.EnsureCreatedAsync();
     await db.Database.ExecuteSqlRawAsync("""
-        CREATE TABLE IF NOT EXISTS attendance_records (
-            id TEXT NOT NULL PRIMARY KEY,
-            employee_id TEXT NOT NULL,
-            shift_date TEXT NOT NULL,
-            scheduled_start TEXT NOT NULL,
-            clock_in TEXT NULL,
-            clock_out TEXT NULL,
-            status TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE RESTRICT
-        );
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_users_email_lower
+        ON users (lower(email));
         """);
     await db.Database.ExecuteSqlRawAsync("""
-        CREATE UNIQUE INDEX IF NOT EXISTS ix_attendance_records_employee_id_shift_date
-        ON attendance_records (employee_id, shift_date);
-        """);
-    await db.Database.ExecuteSqlRawAsync("""
-        CREATE INDEX IF NOT EXISTS ix_attendance_records_shift_date
-        ON attendance_records (shift_date);
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_employees_email_lower
+        ON employees (lower(email));
         """);
 }
 

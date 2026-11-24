@@ -1,10 +1,10 @@
 using System.Linq.Expressions;
 using System.Security.Claims;
+using Npgsql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Data.Sqlite;
 using Workplace.Api.Contracts;
 using Workplace.Api.Services;
 using Workplace.Data;
@@ -54,12 +54,12 @@ public sealed class EmployeesController(
 
         if (!string.IsNullOrWhiteSpace(q.Search))
         {
-            var pattern = $"%{EscapeLike(q.Search.Trim())}%";
+            var pattern = $"%{EscapeLike(q.Search.Trim().ToLowerInvariant())}%";
             query = query.Where(e =>
-                EF.Functions.Like(e.FullName, pattern, "\\") ||
-                EF.Functions.Like(e.EmployeeNumber, pattern, "\\") ||
-                EF.Functions.Like(e.JobTitle, pattern, "\\") ||
-                EF.Functions.Like(e.Department.Name, pattern, "\\"));
+                EF.Functions.Like(e.FullName.ToLower(), pattern, "\\") ||
+                EF.Functions.Like(e.EmployeeNumber.ToLower(), pattern, "\\") ||
+                EF.Functions.Like(e.JobTitle.ToLower(), pattern, "\\") ||
+                EF.Functions.Like(e.Department.Name.ToLower(), pattern, "\\"));
         }
 
         query = q.Sort switch
@@ -412,12 +412,16 @@ public sealed class EmployeesController(
 
     private static string? UniqueViolationMessage(DbUpdateException ex)
     {
-        if (ex.InnerException is not SqliteException { SqliteErrorCode: 19 } sqlite)
+        if (ex.InnerException is not PostgresException
+            {
+                SqlState: PostgresErrorCodes.UniqueViolation
+            } postgres)
             return null;
 
-        if (sqlite.Message.Contains("employee_number", StringComparison.OrdinalIgnoreCase))
+        var constraint = postgres.ConstraintName ?? "";
+        if (constraint.Contains("employee_number", StringComparison.OrdinalIgnoreCase))
             return "That employee number is already in use.";
-        if (sqlite.Message.Contains("employees.email", StringComparison.OrdinalIgnoreCase))
+        if (constraint.Contains("email", StringComparison.OrdinalIgnoreCase))
             return "That email address is already in use.";
         return "A record with these details already exists.";
     }

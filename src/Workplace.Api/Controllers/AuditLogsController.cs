@@ -38,29 +38,32 @@ public sealed class AuditLogsController(AppDbContext db) : ControllerBase
 
         var rangeStart = ToUtcStartOfDay(fromDate);
         var rangeEnd = ToUtcStartOfDay(toDate.AddDays(1));
-        // SQLite only supports equality comparisons for DateTimeOffset values.
-        var logs = db.AuditLogs.FromSqlInterpolated(
+        IQueryable<AuditLog> logs = db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite"
+            ? db.AuditLogs.FromSqlInterpolated(
                 $"SELECT * FROM audit_logs WHERE julianday(created_at) >= julianday({rangeStart}) AND julianday(created_at) < julianday({rangeEnd}) ORDER BY julianday(created_at) DESC, id DESC")
-            .AsNoTracking();
+            : db.AuditLogs.Where(log => log.CreatedAt >= rangeStart && log.CreatedAt < rangeEnd);
+        logs = logs.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(query.EntityType))
             logs = logs.Where(log => log.EntityType == query.EntityType.Trim());
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
-            var pattern = $"%{EscapeLike(query.Search.Trim())}%";
+            var pattern = $"%{EscapeLike(query.Search.Trim().ToLowerInvariant())}%";
             logs = logs.Where(log =>
-                EF.Functions.Like(log.Action, pattern, "\\") ||
-                EF.Functions.Like(log.EntityType, pattern, "\\") ||
-                EF.Functions.Like(log.EntityId, pattern, "\\") ||
-                (log.Changes != null && EF.Functions.Like(log.Changes, pattern, "\\")) ||
-                (log.Reason != null && EF.Functions.Like(log.Reason, pattern, "\\")) ||
+                EF.Functions.Like(log.Action.ToLower(), pattern, "\\") ||
+                EF.Functions.Like(log.EntityType.ToLower(), pattern, "\\") ||
+                EF.Functions.Like(log.EntityId.ToLower(), pattern, "\\") ||
+                (log.Changes != null && EF.Functions.Like(log.Changes.ToLower(), pattern, "\\")) ||
+                (log.Reason != null && EF.Functions.Like(log.Reason.ToLower(), pattern, "\\")) ||
                 db.Users.Any(user => user.Id == log.ActorId && user.Email != null &&
-                    EF.Functions.Like(user.Email, pattern, "\\")));
+                    EF.Functions.Like(user.Email.ToLower(), pattern, "\\")));
         }
 
         var total = await logs.CountAsync(ct);
         var records = await logs
+            .OrderByDescending(log => log.CreatedAt)
+            .ThenByDescending(log => log.Id)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .Select(log => new AuditLogProjection(

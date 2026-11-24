@@ -8,7 +8,7 @@ using Workplace.Data.Entities;
 namespace Workplace.Data;
 
 /// <summary>
-/// Maps workplace data and Identity to the local SQLite database. Column names
+/// Maps workplace data and Identity to the relational database. Column names
 /// are snake_case via UseSnakeCaseNamingConvention (set by the API).
 /// </summary>
 public class AppDbContext(DbContextOptions<AppDbContext> options)
@@ -30,7 +30,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         b.Entity<AppUser>(e =>
         {
             e.ToTable("users");
-            e.Property(u => u.Email).UseCollation("NOCASE");
             e.Property(u => u.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").ValueGeneratedOnAdd();
             e.HasIndex(u => u.Email).IsUnique();
         });
@@ -64,7 +63,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         b.Entity<Employee>(e =>
         {
             e.ToTable("employees");
-            e.Property(x => x.Email).UseCollation("NOCASE");
             e.Property(x => x.FullName)
                 .HasComputedColumnSql("first_name || ' ' || last_name", stored: true);
             e.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").ValueGeneratedOnAdd();
