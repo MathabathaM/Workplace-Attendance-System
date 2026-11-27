@@ -69,7 +69,7 @@ On the hosting provider, configure these environment variables as secrets:
 On its first run with a new, empty database, the app creates the initial
 System Administrator using those bootstrap secrets. After the first successful
 deployment, remove `BootstrapAdmin__Email` and `BootstrapAdmin__Password` from
-the hosting settings. They are never used to overwrite an existing account.
+the hosting settings. They never overwrite an existing password. If this email matches an active System Administrator with no password, the configured password is added once.
 The host must provide HTTPS. Do not use the development sample accounts or
 seed password on a public deployment.
 
