@@ -2,7 +2,7 @@
 -- Legacy PostgreSQL seed data (development only). The running SQLite app seeds
 -- its own local database on first development start; do not run this script there.
 -- Run AFTER schema.sql, once, on an empty database.
--- All people and events are fictional and mirror the prototype (app.js).
+-- All people and events are fictional; sample people use South African names.
 -- The six roles are inserted by schema.sql, so they are not repeated here.
 --
 -- To reset and reload during development, run this first:
@@ -41,7 +41,7 @@ FROM (VALUES
   ('EMP-1001', 'Thabo',    'Mokoena',  'thabo.mokoena@example.com',    'Operations',       'Systems Administrator', 'active'),
   ('EMP-1042', 'Lerato',   'Nkosi',    'lerato.nkosi@example.com',     'Operations',       'Operations Lead',       'active'),
   ('EMP-1087', 'Sipho',    'Dlamini',  'sipho.dlamini@example.com',    'Logistics',        'Warehouse Supervisor',  'active'),
-  ('EMP-1103', 'Amara',    'Patel',    'amara.patel@example.com',      'Finance',          'Accounts Officer',      'active'),
+  ('EMP-1103', 'Nomsa',    'Mthembu',    'nomsa.mthembu@example.com',      'Finance',          'Accounts Officer',      'active'),
   ('EMP-1128', 'Thandiwe', 'Khumalo',  'thandiwe.khumalo@example.com', 'People & Culture', 'HR Coordinator',        'active'),
   ('EMP-1156', 'Kabelo',   'Molefe',   'kabelo.molefe@example.com',    'Operations',       'Safety Technician',     'active'),
   ('EMP-1189', 'Nadia',    'Jacobs',   'nadia.jacobs@example.com',     'Finance',          'Payroll Analyst',       'on_leave'),
@@ -82,9 +82,9 @@ FROM (VALUES
   ('EMP-1001', 'thabo.mokoena@example.com'),     -- System Administrator
   ('EMP-1128', 'thandiwe.khumalo@example.com'),  -- HR Officer
   ('EMP-1042', 'lerato.nkosi@example.com'),      -- Line Manager
-  (NULL,       'security.officer@example.com'),  -- Security Officer
-  ('EMP-1103', 'amara.patel@example.com'),       -- Employee
-  (NULL,       'auditor@example.com')            -- Auditor
+  (NULL,       'mpho.radebe@example.com'),  -- Security Officer
+  ('EMP-1103', 'nomsa.mthembu@example.com'),       -- Employee
+  (NULL,       'pieter.vanwyk@example.com')            -- Auditor
 ) AS v(num, email)
 LEFT JOIN employees e ON e.employee_number = v.num;
 
@@ -94,14 +94,42 @@ FROM (VALUES
   ('thabo.mokoena@example.com',    'System Administrator'),
   ('thandiwe.khumalo@example.com', 'HR Officer'),
   ('lerato.nkosi@example.com',     'Line Manager'),
-  ('security.officer@example.com', 'Security Officer'),
-  ('amara.patel@example.com',      'Employee'),
-  ('auditor@example.com',          'Auditor')
+  ('mpho.radebe@example.com', 'Security Officer'),
+  ('nomsa.mthembu@example.com',      'Employee'),
+  ('pieter.vanwyk@example.com',          'Auditor')
 ) AS v(email, role_name)
 JOIN users u ON u.email = v.email
 JOIN roles r ON r.name  = v.role_name;
 
 -- ---------------------------------------------------------------------
+-- ---------------------------------------------------------------------
+-- Identity table demo rows (inert placeholders only)
+-- ---------------------------------------------------------------------
+-- IDENTITY SAMPLE ROWS START
+INSERT INTO user_claims (user_id, claim_type, claim_value)
+SELECT u.id, 'sample_data', 'demo-only'
+FROM users u
+WHERE u.email = 'nomsa.mthembu@example.com'
+  AND NOT EXISTS (SELECT 1 FROM user_claims c WHERE c.user_id = u.id AND c.claim_type = 'sample_data' AND c.claim_value = 'demo-only');
+
+INSERT INTO role_claims (role_id, claim_type, claim_value)
+SELECT r.id, 'sample_data', 'demo-only'
+FROM roles r
+WHERE r.normalized_name = 'SECURITY OFFICER'
+  AND NOT EXISTS (SELECT 1 FROM role_claims c WHERE c.role_id = r.id AND c.claim_type = 'sample_data' AND c.claim_value = 'demo-only');
+
+INSERT INTO user_logins (login_provider, provider_key, provider_display_name, user_id)
+SELECT 'DemoOnly', 'not-a-real-external-identity', 'Demo data only (not configured)', u.id
+FROM users u
+WHERE u.email = 'pieter.vanwyk@example.com'
+ON CONFLICT (login_provider, provider_key) DO NOTHING;
+
+INSERT INTO user_tokens (user_id, login_provider, name, value)
+SELECT u.id, 'DemoOnly', 'SampleToken', 'NOT-A-REAL-TOKEN'
+FROM users u
+WHERE u.email = 'pieter.vanwyk@example.com'
+ON CONFLICT (user_id, login_provider, name) DO NOTHING;
+-- IDENTITY SAMPLE ROWS END
 -- Access points and devices
 -- ---------------------------------------------------------------------
 INSERT INTO access_points (site_id, name)
@@ -215,7 +243,7 @@ JOIN devices d ON d.label = v.device_label;
 INSERT INTO access_reviews (access_event_id, reviewed_by, outcome, finding, notes, reviewed_at)
 VALUES (
   '00000000-0000-0000-0000-0000000000a7',
-  (SELECT id FROM users WHERE email = 'security.officer@example.com'),
+  (SELECT id FROM users WHERE email = 'mpho.radebe@example.com'),
   'granted_after_review', 'cleared',
   'Metal detector alert. Keys found in pocket during secondary screening; cleared.',
   '2026-10-27 09:31:00+02'
