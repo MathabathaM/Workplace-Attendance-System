@@ -105,6 +105,28 @@ public static class DatabaseInitializer
                     $"Could not create the System Administrator role: {FormatErrors(roleResult.Errors)}");
         }
 
+        var bootstrapEmail = config["BootstrapAdmin:Email"]?.Trim();
+        var bootstrapPassword = config["BootstrapAdmin:Password"];
+        if (!string.IsNullOrWhiteSpace(bootstrapEmail) &&
+            !string.IsNullOrWhiteSpace(bootstrapPassword))
+        {
+            var existingBootstrapAdmin = await users.FindByEmailAsync(bootstrapEmail);
+            if (existingBootstrapAdmin is { IsActive: true } &&
+                await users.IsInRoleAsync(existingBootstrapAdmin, RoleNames.SystemAdministrator) &&
+                !await users.HasPasswordAsync(existingBootstrapAdmin))
+            {
+                var passwordResult = await users.AddPasswordAsync(existingBootstrapAdmin, bootstrapPassword);
+                if (!passwordResult.Succeeded)
+                    throw new InvalidOperationException(
+                        $"Could not initialize the password for the existing System Administrator: {FormatErrors(passwordResult.Errors)}");
+
+                logger.LogInformation(
+                    "Initialized the password for existing passwordless System Administrator {Email}",
+                    existingBootstrapAdmin.Email);
+                return;
+            }
+        }
+
         var administrators = await users.GetUsersInRoleAsync(RoleNames.SystemAdministrator);
         if (administrators.Any(user => user.IsActive))
             return;
